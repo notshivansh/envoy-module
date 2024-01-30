@@ -30,6 +30,7 @@ end
 local function producer(message)
     local config = require 'rdkafka.config'.create()
     local kafkaServer = os.getenv("AKTO_KAFKA_IP")
+    print("traffic res: ", table_to_string(message))
     if kafkaServer~=nil then
         config["statistics.interval.ms"] = "100"
         config["bootstrap.servers"] = kafkaServer
@@ -55,9 +56,25 @@ M = {}
 
 function M.sendToAkto()
 
-    local res = {}
+    local resmap = {}
+    local lastReset = os.time()
+    local dataSent = 0
+
+    function updateLastReset()
+      local current = os.time()
+      if current - lastReset > 30 then
+        lastReset = current
+        dataSent = 0
+      end
+    end
 
     function envoy_on_request(request_handle)
+
+        if dataSent > 30000000 then
+            return
+        end
+
+        local res = {}
         local headers = request_handle:headers()
         local headersMap = {}
         for key, value in pairs(headers) do
@@ -80,10 +97,27 @@ function M.sendToAkto()
         res["is_pending"] = "false"
         res["source"] = "OTHER"
         res["timestamp"] = request_handle:timestampString()
-    
+        local key = tostring(math.random(10000))
+        local ini = request_handle:streamInfo():dynamicMetadata():get("envoy.filters.http.lua")
+        request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.lua", "akto-key",key)
+        resmap[key] = res
     end
     
     function envoy_on_response(response_handle)
+        updateLastReset()
+        local temp = response_handle:streamInfo():dynamicMetadata():get("envoy.filters.http.lua")
+        if temp == nil then
+            return 
+        end
+        local key = temp["akto-key"]
+        if key == nil then 
+            return 
+        end
+        local res = resmap[key]
+        if res == nil then
+            return
+        end
+
         local headers = response_handle:headers()
         local headersMap = {}
         for key, value in pairs(headers) do
@@ -99,6 +133,10 @@ function M.sendToAkto()
         res["responsePayload"] = responseBody
         res["statusCode"] = response_handle:headers():get(":status")
         res["status"] = friendlyHttpStatus[response_handle:headers():get(":status")]
+
+        resmap[key] = nil
+        dataSent = dataSent + string.len(table_to_string(res))
+        print("dataSent: ", dataSent)
         producer(res)
     end
 
