@@ -53,6 +53,16 @@ local function producer(message)
     end
 end
 
+function hash(str)
+    h = 5381;
+
+    for c in str:gmatch"." do
+        h = ((h << 1) + h) + string.byte(c)
+    end
+    h = h%10000000000
+    return h
+end
+
 M = {}
 
 function M.sendToAkto()
@@ -94,10 +104,11 @@ function M.sendToAkto()
         res["path"] = request_handle:headers():get(":path")
         res["method"] = request_handle:headers():get(":method")
         res["ip"] = "0.0.0.0"
-        res["akto_vxlan_id"] = "123"
+        local address = request_handle:streamInfo():downstreamLocalAddress()
+        res["akto_vxlan_id"] = tostring(hash(address))
         res["is_pending"] = "false"
         res["source"] = "OTHER"
-        res["time"] = math.floor(tonumber(request_handle:timestampString())/1000)
+        res["time"] = tostring(math.floor(tonumber(request_handle:timestampString())/1000))
         res["akto_account_id"] = "1000000"
         local key = tostring(math.random(10000))
         print("request stream info: ", request_handle:streamInfo():downstreamLocalAddress() , request_handle:streamInfo():downstreamDirectRemoteAddress(), request_handle:streamInfo():downstreamRemoteAddress(), request_handle:streamInfo():requestedServerName())
