@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: istio-demo-proxy
+  namespace: default
+spec:
+  containers:
+  - name: istio-demo-proxy
+    image: istio/proxyv2:1.20.2
+    lifecycle:
+      postStart:
+        exec:
+          command: ["bin/sh", "-c", "apt update -y && apt install wget unzip && apt install librdkafka-dev luarocks -y && luarocks install lua-cjson"]

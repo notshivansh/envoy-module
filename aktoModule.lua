@@ -60,6 +60,7 @@ function hash(str)
     h = 5381;
     for c in str:gmatch"." do
         h = lshift(h, 5) + h + string.byte(c)
+        h = h%10000000000
     end
     h = h%10000000000
     return h
