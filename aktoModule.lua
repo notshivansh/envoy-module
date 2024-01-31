@@ -81,7 +81,7 @@ function M.sendToAkto()
         for key, value in pairs(headers) do
             headersMap[key] = value
         end
-        res["requestHeaders"] = headersMap
+        res["requestHeaders"] = cjson.encode(headersMap)
         local requestBody = ""
         for chunk in request_handle:bodyChunks() do
             if (chunk:length() > 0) then
@@ -124,7 +124,7 @@ function M.sendToAkto()
         for key, value in pairs(headers) do
             headersMap[key] = value
         end
-        res["responseHeaders"] = headersMap
+        res["responseHeaders"] = cjson.encode(headersMap)
         local responseBody = ""
         for chunk in response_handle:bodyChunks() do
             if (chunk:length() > 0) then
