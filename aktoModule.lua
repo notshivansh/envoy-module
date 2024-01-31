@@ -100,7 +100,7 @@ function M.sendToAkto()
         res["time"] = math.floor(tonumber(request_handle:timestampString())/1000)
         res["akto_account_id"] = "1000000"
         local key = tostring(math.random(10000))
-        local ini = request_handle:streamInfo():dynamicMetadata():get("envoy.filters.http.lua")
+        print("request stream info: ", request_handle:streamInfo():downstreamLocalAddress() , request_handle:streamInfo():downstreamDirectRemoteAddress(), request_handle:streamInfo():downstreamRemoteAddress(), request_handle:streamInfo():requestedServerName())
         request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.lua", "akto-key",key)
         resmap[key] = res
     end
@@ -136,6 +136,7 @@ function M.sendToAkto()
         res["statusCode"] = response_handle:headers():get(":status")
         res["status"] = friendlyHttpStatus[response_handle:headers():get(":status")]
 
+        print("response stream info: ", response_handle:streamInfo():downstreamLocalAddress() , response_handle:streamInfo():downstreamDirectRemoteAddress(), response_handle:streamInfo():downstreamRemoteAddress(), response_handle:streamInfo():requestedServerName())
         resmap[key] = nil
         dataSent = dataSent + string.len(table_to_string(res))
         print("dataSent: ", dataSent)
