@@ -30,8 +30,7 @@ end
 local function producer(message)
     local config = require 'rdkafka.config'.create()
     local kafkaServer = os.getenv("AKTO_KAFKA_IP")
-    local messageEncoded = cjson.encode(message)
-    print("traffic res: ", messageEncoded)
+    print("traffic res: ", message)
     if kafkaServer~=nil then
         config["statistics.interval.ms"] = "100"
         config["bootstrap.servers"] = kafkaServer
@@ -45,7 +44,7 @@ local function producer(message)
         local topic = require 'rdkafka.topic'.create(producer, "akto.api.logs", topic_config)
 
         local KAFKA_PARTITION_UA = -1
-        producer:produce(topic, KAFKA_PARTITION_UA, messageEncoded)
+        producer:produce(topic, KAFKA_PARTITION_UA, message)
 
         while producer:outq_len() ~= 0 do
             producer:poll(10)
@@ -149,9 +148,10 @@ function M.sendToAkto()
 
         print("response stream info: ", response_handle:streamInfo():downstreamLocalAddress() , response_handle:streamInfo():downstreamDirectRemoteAddress(), response_handle:streamInfo():downstreamRemoteAddress(), response_handle:streamInfo():requestedServerName())
         resmap[key] = nil
-        dataSent = dataSent + string.len(table_to_string(res))
+        local messageEncoded = cjson.encode(res)
+        dataSent = dataSent + string.len(messageEncoded)
         print("dataSent: ", dataSent)
-        producer(res)
+        producer(messageEncoded)
     end
 
 end
