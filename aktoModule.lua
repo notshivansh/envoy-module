@@ -97,7 +97,8 @@ function M.sendToAkto()
         res["akto_vxlan_id"] = "123"
         res["is_pending"] = "false"
         res["source"] = "OTHER"
-        res["timestamp"] = request_handle:timestampString()
+        res["time"] = math.floor(tonumber(request_handle:timestampString())/1000)
+        res["akto_account_id"] = "1000000"
         local key = tostring(math.random(10000))
         local ini = request_handle:streamInfo():dynamicMetadata():get("envoy.filters.http.lua")
         request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.lua", "akto-key",key)
